@@ -1,0 +1,23 @@
+# Smaug Database Management Systems
+
+### Designed by
+### > Reid Pettibone
+### > Gavin Piper
+
+## Overview
+**How to start the app in development.**
+
+Step 1: 
+>cd backend && npm run development
+
+Step 2:
+> cd frontend && npm run development
+
+**How to start the app in production**
+
+Step 1: 
+>cd backend && npm run production
+
+Step 2:
+> cd frontend && npm run production
+
