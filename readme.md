@@ -21,3 +21,5 @@ Step 1:
 Step 2:
 > cd frontend && npm run production
 
+*Important note: You will possibly need to adjust the backend/db-connector file and the ports in backend/server.js, and frontend/reactServer.cjs in order from them to work properly*
+
