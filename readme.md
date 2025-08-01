@@ -7,6 +7,10 @@
 ## Overview
 **How to start the app in development.**
 
+Step 0 (Done only once):
+cd backend && npm install
+cd frontend && npm install
+
 Step 1: 
 >cd backend && npm run development
 

@@ -2,11 +2,10 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "development": "vite",
     "build": "vite build",
-    "production": "npx forever start reactServer.cjs",
+    "production": "npm run build && npx forever start reactServer.cjs",
     "stop_production": "npx forever stop reactServer.cjs",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
@@ -16,7 +15,8 @@
     "forever": "^4.0.3",
     "path": "^0.12.7",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.7.1"
   },
   "devDependencies": {
     "@types/react": "^18.0.26",
