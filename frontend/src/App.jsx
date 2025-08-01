@@ -4,6 +4,10 @@ import { Routes, Route } from 'react-router-dom';
 // Pages
 import Home from './pages/Home';
 import Games from './pages/Games';
+import DBCustomers from './pages/Customers'
+import DBGenres from './pages/Genres'
+import DBPurchases from './pages/Purchases'
+import DBPlatforms from './pages/Platforms'
 
 // Components
 import Navigation from './components/Navigation';
@@ -20,6 +24,10 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/Games" element={<Games backendURL={backendURL} />} />
+                <Route path="/Customers" element={<DBCustomers backendURL={backendURL} />} />
+                <Route path="/Purchases" element={<DBPurchases backendURL={backendURL} />} />
+                <Route path="/Platforms" element={<DBPlatforms backendURL={backendURL} />} />
+                <Route path="/Genres" element={<DBGenres backendURL={backendURL} />} />
             </Routes>
         </>
     );

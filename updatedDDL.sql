@@ -21,6 +21,8 @@ DROP TABLE IF EXISTS Customers;
 -- 
 
 -- Customers
+
+/* Should assign LibraryID and CartID FK's to customer */
 CREATE TABLE Customers (
     customerID INT AUTO_INCREMENT NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -28,6 +30,7 @@ CREATE TABLE Customers (
     phoneNumber CHAR(10),
     dateCreated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (customerID)
+    (`customerID`) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- Platforms
@@ -103,15 +106,15 @@ CREATE TABLE Purchases (
 
 -- PurchaseItems
 CREATE TABLE PurchaseItems (
-    purchaseID INT NOT NULL,
-    gameID INT NOT NULL,
-    platformID INT NOT NULL,
-    totalPaid DECIMAL(19,2) NOT NULL,
-    PRIMARY KEY (purchaseID, gameID, platformID),
-    FOREIGN KEY (purchaseID) REFERENCES Purchases(purchaseID) ON DELETE CASCADE,
-    FOREIGN KEY (gameID) REFERENCES Games(gameID) ON DELETE RESTRICT,
-    FOREIGN KEY (platformID) REFERENCES Platforms(platformID) ON DELETE RESTRICT
-);
+      purchaseID INT NOT NULL,
+      gameID INT NOT NULL,
+      platformID INT NOT NULL,
+      totalPaid DECIMAL(19,2) NOT NULL,
+      PRIMARY KEY (purchaseID, gameID, platformID),
+      FOREIGN KEY (purchaseID) REFERENCES Purchases(purchaseID) ON DELETE CASCADE,
+      FOREIGN KEY (gameID) REFERENCES Games(gameID) ON DELETE RESTRICT,
+      FOREIGN KEY (platformID) REFERENCES Platforms(platformID) ON
+)
 
 -- Genres
 CREATE TABLE Genres (

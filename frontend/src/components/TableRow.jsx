@@ -1,13 +1,14 @@
-import DeleteGameForm from './DeleteGameForm';
 
-const TableRow = ({ rowObject, backendURL, refreshGames }) => {
+import DeleteForm from './DeleteForm';
+
+const TableRow = ({ rowObject, backendURL, refreshData, children }) => {
     return (
         <tr>
             {Object.values(rowObject).map((value, index) => (
                 <td key={index}>{value}</td>
             ))}
-            
-            <DeleteGameForm rowObject={rowObject} backendURL={backendURL} refreshGames={refreshGames} />
+            {children}
+            <DeleteForm rowObject={rowObject} backendURL={backendURL} refreshData={refreshData} />
         </tr>
     );
 };
