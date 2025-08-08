@@ -14,7 +14,7 @@ app.use(cors({ credentials: true, origin: "*" }));
 app.use(express.json()); // this is needed for post requests
 
 
-const PORT = 9669;
+const PORT = 9624;
 
 // ########################################
 // ########## ROUTE HANDLERS
@@ -22,16 +22,20 @@ const PORT = 9669;
 // READ ROUTES
 app.get('/games', async (req, res) => {
     try {
-        const query1 = 
-        'SELECT Games.name, Ratings.name AS "ESRB Rating", \
-        DATE_FORMAT(Games.releaseDate, \'%m/%d/%y\') AS releaseDate, \
-        Publishers.name AS "Publisher" \
-        FROM Games INNER JOIN Ratings on Ratings.ratingID = Games.ratingID \
-        INNER JOIN Publishers on Publishers.publisherID = Games.publisherID;';
+        const query1 = `
+          SELECT G.gameID AS gameID,
+                G.name   AS name,
+                R.name   AS esrbRating,
+                DATE_FORMAT(G.releaseDate, '%m/%d/%y') AS releaseDate,
+                P.name   AS publisher
+          FROM Games G
+          JOIN Ratings R ON R.ratingID = G.ratingID
+          JOIN Publishers P ON P.publisherID = G.publisherID;`;
         
         const query2 = 'SELECT * FROM Platforms;';
         
         const [games] = await db.query(query1);
+        console.log('DEBUG /games first row keys:', games[0] && Object.keys(games[0]));
         const [platforms] = await db.query(query2);
     
         res.status(200).json({ games, platforms });
@@ -117,6 +121,32 @@ app.get('/', (req, res) => {
         endpoints: ['/games', '/customers'],                         
         port: PORT 
     });
+});
+
+
+// RESET
+app.post('/admin/reset-db', async (req, res) => {
+  try {
+    console.log('RESET: calling sp_reset_gamedb');
+    await db.query('CALL sp_reset_gamedb()');
+    res.json({ success: true, message: 'Database reset & seeded.' });
+  } catch (err) {
+    console.error('RESET ERROR:', err);
+    res.status(500).json({ success: false, error: 'Reset failed' });
+  }
+});
+
+app.delete('/games/:id', async (req, res) => {
+  try {
+    const gameID = Number(req.params.id);
+    const [[row]] = await db.query('SELECT gameID FROM Games WHERE gameID=?',[gameID]);
+    if (!row) return res.status(404).json({success:false,message:'Game not found'});
+    await db.query('CALL sp_delete_game(?)',[gameID]);
+    res.json({success:true,message:'Game and related purchase history removed'});
+  } catch (e) {
+    console.error('Delete game error:', e);
+    res.status(500).json({success:false,error:e.sqlMessage||'Failed'});
+  }
 });
 
 // ########################################

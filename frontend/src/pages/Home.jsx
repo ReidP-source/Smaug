@@ -1,4 +1,17 @@
-function Home() {
+function Home({ backendURL }) {
+  
+      const handleReset = async () => {
+        if (!window.confirm('Reset and reseed the database?')) return;
+        try {
+            const res = await fetch(`${backendURL}/admin/reset-db`, { method: 'POST' });
+            const json = await res.json();
+            alert(json.success ? 'Reset complete.' : 'Reset failed.');
+        } catch (e) {
+            alert('Request error.');
+            console.error(e);
+        }
+    };
+
     return (
         <>
             <h1>Home page</h1>
@@ -27,6 +40,7 @@ function Home() {
                 
                 <h3>DBMS Technical Details</h3>
                 <p>TBC</p>
+                <button className = 'reset-db-btn' onClick={handleReset}>Reset Database</button>
                 
             </div>
         </>

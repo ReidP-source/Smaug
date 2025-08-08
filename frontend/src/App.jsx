@@ -13,7 +13,7 @@ import DBPlatforms from './pages/Platforms'
 import Navigation from './components/Navigation';
 
 // Define the backend port and URL for API requests
-const backendPort = 9669;  // Use the port you assigned to the backend server, this would normally go in a .env file
+const backendPort = 9624;  // Use the port you assigned to the backend server, this would normally go in a .env file
 const backendURL = `http://classwork.engr.oregonstate.edu:${backendPort}`;
 
 function App() {
@@ -22,7 +22,7 @@ function App() {
         <>
             <Navigation />
             <Routes>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<Home backendURL={backendURL}/>} />
                 <Route path="/Games" element={<Games backendURL={backendURL} />} />
                 <Route path="/Customers" element={<DBCustomers backendURL={backendURL} />} />
                 <Route path="/Purchases" element={<DBPurchases backendURL={backendURL} />} />

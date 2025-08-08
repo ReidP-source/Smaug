@@ -1,66 +1,77 @@
-import { useState, useEffect } from 'react';  // Importing useState for managing state in the component
+import { useState, useEffect } from 'react';
+import TableHeader from '../components/TableHeader';
 import TableRow from '../components/TableRow';
-import CreateGameForm from '../components/CreateGameForm';
-import UpdateGameForm from '../components/UpdateGameForm';
-
+import CreateForm from '../components/CreateForm';
 
 function Games({ backendURL }) {
+  const [games, setGames] = useState([]);
+  const [platforms, setPlatforms] = useState([]);
+  const [editingId, setEditingId] = useState(null);
 
-    // Set up a state variable `game` to store and display the backend response
-    const [games, setGames] = useState([]);
-    const [platforms, setPlatforms] = useState([]);
+  const getData = async () => {
+    try {
+      const res = await fetch(backendURL + '/games');
+      const { games, platforms } = await res.json();
+      setGames(games);
+      setPlatforms(platforms);
+      if (games.length > 0) {
+        console.log('Games payload sample:', games[0]); // debug
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
+  useEffect(() => { getData(); }, []);
 
-    const getData = async function () {
-        try {
-            // Make a GET request to the backend
-            const response = await fetch(backendURL + '/games');
-            
-            // Convert the response into JSON format
-            const {games, platforms} = await response.json();
-    
-            // Update the Game state with the response data
-            setGames(games);
-            setPlatforms(platforms);
-            
-        } catch (error) {
-          // If the API call fails, print the error to the console
-          console.log(error);
-        }
+  const displayColumns = games.length > 0
+    ? Object.keys(games[0]).filter(c => c !== 'gameID') // hide id from display
+    : [];
 
-    };
+  const safeIsEditing = (g) =>
+    editingId !== null && g.gameID != null && editingId === g.gameID;
 
-    // Load table on page load
-    useEffect(() => {
-        getData();
-    }, []);
+  return (
+    <>
+      <h1>Games</h1>
+      <table>
+        <TableHeader
+          columns={displayColumns}
+          extraHeaders={['Delete', 'Edit']}
+        />
+        <tbody>
+          {games.map((g, idx) => (
+            <TableRow
+              key={g.gameID ?? `row-${idx}`} // fallback key so warning stops
+              rowObject={g}
+              backendURL={backendURL}
+              refreshData={getData}
+              columns={displayColumns}
+              table="games"
+              idField="gameID"
+              isEditing={safeIsEditing(g)}
+              onEdit={() => {
+                if (g.gameID == null) {
+                  console.warn('Cannot enter edit mode: missing gameID for', g);
+                  return;
+                }
+                setEditingId(g.gameID);
+              }}
+              onCancel={() => setEditingId(null)}
+            />
+          ))}
+        </tbody>
+      </table>
 
-    return (
-        <>
-            <h1>Games</h1>
-
-            <table>
-                <thead>
-                    <tr>
-                        {games.length > 0 && Object.keys(games[0]).map((header, index) => (
-                            <th key={index}>{header}</th>
-                        ))}
-                        <th></th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {games.map((game, index) => (
-                        <TableRow key={index} rowObject={game} backendURL={backendURL} refreshGames={getData}/>
-                    ))}
-
-                </tbody>
-            </table>
-            
-            <CreateGameForm platforms={platforms} backendURL={backendURL} refreshGames={getData} />
-            <UpdateGameForm games={games} platforms={platforms} backendURL={backendURL} refreshGames={getData} />               
-        </>
-    );
-
+      <h2>Create Game</h2>
+      <CreateForm
+        columns={['name','ratingID','releaseDate','publisherID']}
+        backendURL={backendURL}
+        table="games"
+        refreshData={getData}
+        layout="row"
+      />
+    </>
+  );
 }
 export default Games;
