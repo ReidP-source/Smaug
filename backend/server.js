@@ -14,7 +14,7 @@ app.use(cors({ credentials: true, origin: "*" }));
 app.use(express.json()); // this is needed for post requests
 
 
-const PORT = 9624;
+const PORT = 9660;
 
 // ########################################
 // ########## ROUTE HANDLERS
@@ -46,6 +46,43 @@ app.get('/games', async (req, res) => {
     }
 });
 
+//Carts Queries
+app.get('/customers/:customerID/cart', async (req, res) => {
+    try {
+        const { customerID } = req.params;
+        
+        // Get customer name
+        const customerQuery = `SELECT Customers.name 
+                              FROM Customers 
+                              WHERE Customers.customerID = ?`;
+        
+        // Get cart items with game details for the customer
+        const cartQuery = `SELECT CartItems.gameID,
+                                  Platforms.platformID,
+                                  Games.name as "Game Name",
+                                  Games.releaseDate as "Release Date",
+                                  Platforms.name as "Platform Name"
+                          FROM Carts 
+                          JOIN CartItems ON Carts.cartID = CartItems.cartID
+                          JOIN Games ON CartItems.gameID = Games.gameID
+                          JOIN Platforms ON CartItems.platformID = Platforms.platformID
+                          WHERE Carts.customerID = ?`;
+        
+        const [customerResult] = await db.query(customerQuery, [customerID]);
+        const [cartItems] = await db.query(cartQuery, [customerID]);
+        
+        const customerName = customerResult.length > 0 ? customerResult[0].name : 'Unknown Customer';
+        
+        res.status(200).json({ 
+            cartItems, 
+            customerName 
+        });
+    } catch (error) {
+        console.error("Error executing cart queries:", error);
+        res.status(500).send("An error occurred while executing the cart database queries.");
+    }
+});
+
 // Customers Queries
 app.get('/customers', async (req, res) => {
     try {
@@ -58,6 +95,47 @@ app.get('/customers', async (req, res) => {
     } catch (error){
         console.error("Error executing customer queries:", error);
         res.status(500).send("An error occurred while executing the customer database queries.");
+    }
+});
+
+app.get('/customers/:customerID/library', async (req, res) => {
+    try {
+        const { customerID } = req.params;
+        
+        // Single query to get customer name and library items
+        const query = `
+            SELECT 
+                Customers.name AS customerName,
+                LibraryItems.libraryID,
+                Games.gameID,
+                Games.name AS gameName,
+                Games.releaseDate,
+                Publishers.name AS publisher,
+                Ratings.name AS rating
+            FROM Customers
+            JOIN Libraries ON Customers.customerID = Libraries.customerID
+            LEFT JOIN LibraryItems ON Libraries.libraryID = LibraryItems.libraryID
+            LEFT JOIN Games ON LibraryItems.gameID = Games.gameID
+            LEFT JOIN Publishers ON Games.publisherID = Publishers.publisherID
+            LEFT JOIN Ratings ON Games.ratingID = Ratings.ratingID
+            WHERE Customers.customerID = ?
+            ORDER BY Games.name;
+        `;
+        
+        const [results] = await db.query(query, [customerID]);
+        
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+        
+        const customerName = results[0].customerName;
+        const libraryItems = results[0].gameID ? results : []; // If no games, return empty array
+        
+        res.status(200).json({ customerName,libraryItems });
+        
+    } catch (error) {
+        console.error("Error executing library query:", error);
+        res.status(500).json({ error: "An error occurred while retrieving the library data." });
     }
 });
 

@@ -3,27 +3,34 @@ import TableRow from '../components/TableRow';
 
 function DBGenres({ backendURL }) {
 
-    // Set up a state variable `people` to store and display the backend response
+    // Set up state variables to store and display the backend response
     const [genres, setGenres] = useState([]);
     const [genreItems, setGenreItems] = useState([]);
     const [games, setGames] = useState([]);
+    const [editingId, setEditingId] = useState(null); // Added for editing functionality
 
     const getData = async function () {
         try {
             // Make a GET request to the backend
             const response = await fetch(backendURL + '/genres');
             
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             // Convert the response into JSON format
-            const {genres} = await response.json();
+            const data = await response.json();
+            const {genres, genreItems, games} = data;
     
-            // Update the people state with the response data
-            setGenres(genres)
-            setGenreItems(genreItems)
-            setGames(games)
+            // Update the state variables with the response data
+            setGenres(genres || []);
+            setGenreItems(genreItems || []);
+            setGames(games || []);
             
         } catch (error) {
           // If the API call fails, print the error to the console
           console.log(`Failure retrieving genre data: ${error}`);
+          setGenres([]);
         }
 
     };
@@ -37,22 +44,38 @@ function DBGenres({ backendURL }) {
         <>
             <h1>Genres</h1>
 
-            <table>
-                <thead>
-                    <tr>
-                        {genres.length > 0 && Object.keys(genres[0]).map((header, index) => (
-                            <th key={index}>{header}</th>
-                        ))}
-                        <th></th>
-                    </tr>
-                </thead>
+            {(!genres || genres.length === 0) ? (
+                <div>No genres found.</div>
+            ) : (
+                <table>
+                    <thead>
+                        <tr>
+                            {genres.length > 0 && Object.keys(genres[0]).map((header, index) => (
+                                <th key={index}>{header}</th>
+                            ))}
+                            <th>Delete</th>
+                            <th>Edit</th>
+                        </tr>
+                    </thead>
 
-                <tbody>
-                    {genres.map((genre, index) => (
-                        <TableRow key={index} rowObject={genre} backendURL={backendURL} refreshGenres={getData}/>
-                    ))}
-                </tbody>
-            </table>
+                    <tbody>
+                        {genres.map((genre, index) => (
+                            <TableRow 
+                                key={genre.genreID || index} 
+                                rowObject={genre} 
+                                backendURL={backendURL} 
+                                refreshData={getData}
+                                columns={Object.keys(genre)}
+                                table="genres"
+                                idField="genreID"
+                                isEditing={editingId === genre.genreID}
+                                onEdit={() => setEditingId(genre.genreID)}
+                                onCancel={() => setEditingId(null)}
+                            />
+                        ))}
+                    </tbody>
+                </table>
+            )}
             
             {/*<CreateCustomerForm homeworlds={homeworlds} backendURL={backendURL} refreshCustomers={getData} />
             <UpdateCustomerForm people={people} homeworlds={homeworlds} backendURL={backendURL} refreshCustomers={getData} />*/}              

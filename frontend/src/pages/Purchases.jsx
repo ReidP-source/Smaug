@@ -1,30 +1,21 @@
-import { useState, useEffect } from 'react';  // Importing useState for managing state in the component
+import { useState, useEffect } from 'react';
 import TableRow from '../components/TableRow';
+import TableHeader from '../components/TableHeader';
 
 function DBPurchases({ backendURL }) {
-
-    // Set up a state variable `people` to store and display the backend response
     const [purchases, setPurchases] = useState([]);
+    const [editingId, setEditingId] = useState(null); 
 
     const getData = async function () {
         try {
-            // Make a GET request to the backend
             const response = await fetch(backendURL + '/purchases');
-            
-            // Convert the response into JSON format
             const {purchases} = await response.json();
-    
-            // Update the people state with the response data
-            setPurchases(purchases)
-            
+            setPurchases(purchases);
         } catch (error) {
-          // If the API call fails, print the error to the console
-          console.log(`Failure retrieving purchase data: ${error}`);
+            console.log(`Failure retrieving purchase data: ${error}`);
         }
-
     };
 
-    // Load table on page load
     useEffect(() => {
         getData();
     }, []);
@@ -32,30 +23,34 @@ function DBPurchases({ backendURL }) {
     return (
         <>
             <h1>Purchases</h1>
-               {(!purchases || purchases.length === 0) ? (
+            {(!purchases || purchases.length === 0) ? (
                 <div>No purchases found.</div>
             ) : (
-
-            <table>
-                <thead>
-                    <tr>
-                        {purchases.length > 0 && Object.keys(purchases[0]).map((header, index) => (
-                            <th key={index}>{header}</th>
+                <table>
+                    <TableHeader
+                        columns={purchases.length > 0 ? Object.keys(purchases[0]) : []}
+                        extraHeaders={['Delete', 'Edit']}
+                    />
+                    <tbody>
+                        {purchases.map((purchase) => (
+                            <TableRow
+                                key={purchase.purchaseID}
+                                rowObject={purchase}
+                                backendURL={backendURL}
+                                refreshData={getData}  // Changed from refreshPurchases
+                                columns={Object.keys(purchase)}
+                                table="purchases"
+                                idField="purchaseID"
+                                isEditing={editingId === purchase.purchaseID}
+                                onEdit={() => setEditingId(purchase.purchaseID)}
+                                onCancel={() => setEditingId(null)}
+                            />
                         ))}
-                        <th></th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {purchases.map((purchase, index) => (
-                        <TableRow key={index} rowObject={purchase} backendURL={backendURL} refreshPurchases={getData}/>
-                    ))}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
             )}
-            {/*<CreateCustomerForm homeworlds={homeworlds} backendURL={backendURL} refreshCustomers={getData} />
-            <UpdateCustomerForm people={people} homeworlds={homeworlds} backendURL={backendURL} refreshCustomers={getData} />*/}              
-          </>
+        </>
     );
+}
 
-} export default DBPurchases;
+export default DBPurchases;
