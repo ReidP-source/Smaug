@@ -10,6 +10,7 @@ import DBLibrary from './pages/Library'
 import DBGenres from './pages/Genres'
 import DBPurchases from './pages/Purchases'
 import DBPlatforms from './pages/Platforms'
+//import DBRating from './pages/Ratings'
 
 // Components
 import Navigation from './components/Navigation';
@@ -32,6 +33,7 @@ function App() {
                 <Route path="/Purchases" element={<DBPurchases backendURL={backendURL} />} />
                 <Route path="/Platforms" element={<DBPlatforms backendURL={backendURL} />} />
                 <Route path="/Genres" element={<DBGenres backendURL={backendURL} />} />
+                
             </Routes>
         </>
     );
