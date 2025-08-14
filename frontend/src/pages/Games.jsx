@@ -5,18 +5,14 @@ import CreateForm from '../components/CreateForm';
 
 function Games({ backendURL }) {
   const [games, setGames] = useState([]);
-  const [platforms, setPlatforms] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
   const getData = async () => {
     try {
       const res = await fetch(backendURL + '/games');
-      const { games, platforms } = await res.json();
+      const { games } = await res.json();
       setGames(games);
-      setPlatforms(platforms);
-      if (games.length > 0) {
-        console.log('Games payload sample:', games[0]); // debug
-      }
+  
     } catch (e) {
       console.log(e);
     }
@@ -25,7 +21,7 @@ function Games({ backendURL }) {
   useEffect(() => { getData(); }, []);
 
   const displayColumns = games.length > 0
-    ? Object.keys(games[0]).filter(c => c !== 'gameID') // hide id from display
+    ? Object.keys(games[0]).filter(c => c !== 'gameID') 
     : [];
 
   const safeIsEditing = (g) =>
@@ -42,7 +38,7 @@ function Games({ backendURL }) {
         <tbody>
           {games.map((g, idx) => (
             <TableRow
-              key={g.gameID ?? `row-${idx}`} // fallback key so warning stops
+              key={g.gameID ?? `row-${idx}`} 
               rowObject={g}
               backendURL={backendURL}
               refreshData={getData}
@@ -65,7 +61,7 @@ function Games({ backendURL }) {
 
       <h2>Create Game</h2>
       <CreateForm
-        columns={['name','ratingID','releaseDate','publisherID']}
+        columns={['name','releaseDate','ratingName','publisherName']}
         backendURL={backendURL}
         table="games"
         refreshData={getData}

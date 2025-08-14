@@ -61,15 +61,15 @@ function DBGenres({ backendURL }) {
                     <tbody>
                         {genres.map((genre, index) => (
                             <TableRow 
-                                key={genre.genreID || index} 
+                                key={genre.name || index} 
                                 rowObject={genre} 
                                 backendURL={backendURL} 
                                 refreshData={getData}
                                 columns={Object.keys(genre)}
                                 table="genres"
                                 idField="genreID"
-                                isEditing={editingId === genre.genreID}
-                                onEdit={() => setEditingId(genre.genreID)}
+                                isEditing={editingId === genre.name}
+                                onEdit={() => setEditingId(genre.name)}
                                 onCancel={() => setEditingId(null)}
                             />
                         ))}
