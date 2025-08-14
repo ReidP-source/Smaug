@@ -14,7 +14,31 @@ app.use(cors({ credentials: true, origin: "*" }));
 app.use(express.json()); // this is needed for post requests
 
 
-const PORT = 9660;
+const PORT = 9661;
+
+/* HELPER FUNCTIONS */
+
+const normalizeDate = (v) => {
+  if (!v) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const m = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (m) {
+    let [, mm, dd, yy] = m;
+    if (yy.length === 2) {
+      const n = Number(yy);
+      yy = String(n >= 70 ? 1900 + n : 2000 + n);
+    }
+    return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+  }
+  const d = new Date(v);
+  if (!Number.isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return `${y}-${mm}-${dd}`;
+  }
+  return v;
+};
 
 // ########################################
 // ########## ROUTE HANDLERS
@@ -34,8 +58,7 @@ app.get('/games', async (req, res) => {
         
         const query2 = 'SELECT * FROM Platforms;';
         
-        const [games] = await db.query(query1);
-        console.log('DEBUG /games first row keys:', games[0] && Object.keys(games[0]));
+        const [games] = await db.query(query1)
         const [platforms] = await db.query(query2);
     
         res.status(200).json({ games, platforms });
@@ -142,7 +165,7 @@ app.get('/customers/:customerID/library', async (req, res) => {
 // Genre Queries
 app.get('/genres', async (req, res) => {
     try {
-        const query1 = 'SELECT Genres.name FROM Genres';
+        const query1 = 'SELECT Genres.name, Genres.genreID FROM Genres';
         
         
         const [genres] = await db.query(query1);
@@ -180,7 +203,7 @@ app.get('/purchases', async (req, res) => {
 //Platforms
 app.get('/platforms', async (req, res) => {
     try {
-        const query1 = `SELECT Platforms.name
+        const query1 = `SELECT Platforms.name, Platforms.platformID
                         FROM Platforms`;
         
         
@@ -214,6 +237,46 @@ app.post('/admin/reset-db', async (req, res) => {
   }
 });
 
+
+
+/* CREATE Calls */
+
+app.post('/games/create', async (req, res) => {
+  try {
+    const {
+      name,
+      releaseDate,
+      ratingID = null,
+      ratingName = null,
+      publisherID = null,
+      publisherName = null
+    } = req.body || {};
+
+    if (!name || !releaseDate) {
+      return res.status(400).json({ success:false, message:'name and releaseDate are required' });
+    }
+
+    const [rows] = await db.query('CALL sp_create_game(?, ?, ?, ?, ?, ?)', [
+      name,
+      releaseDate,        // 'YYYY-MM-DD'
+      ratingID,           // or null
+      ratingName,         // or null
+      publisherID,        // or null
+      publisherName       // or null
+    ]);
+
+    // MySQL returns nested result sets from CALL; last SELECT is first element of rows
+    const newId = rows?.[0]?.[0]?.gameID ?? null;
+    return res.json({ success:true, gameID:newId });
+  } catch (e) {
+    console.error('Create game failed:', e);
+    return res.status(500).json({ success:false, error: e.sqlMessage || e.message || 'Failed' });
+  }
+});
+
+
+/* DELETE Calls */ 
+
 app.delete('/games/:id', async (req, res) => {
   try {
     const gameID = Number(req.params.id);
@@ -224,6 +287,55 @@ app.delete('/games/:id', async (req, res) => {
   } catch (e) {
     console.error('Delete game error:', e);
     res.status(500).json({success:false,error:e.sqlMessage||'Failed'});
+  }
+});
+
+app.delete('/customers/:id', async (req, res) => {
+  try {
+    const c_id = Number(req.params.id);
+    const [[row]] = await db.query('SELECT customerID FROM Customers WHERE customerID=?',[c_id]);
+    if (!row) return res.status(404).json({success:false,message: `Customer ${c_id} not found`});
+    await db.query('CALL sp_delete_customer(?)', [c_id])
+    res.json({success:true,message:'Customer and related data removed'});
+  }catch(e){
+    console.error('Delete Customer Error:', e);
+    res.status(500).json({success:false,error:e.sqlMessage||'Failed'});
+  }
+});
+
+/* UPDATE Calls */
+
+app.put('/games/update/:id', async (req, res) => {
+  try {
+    const gameID = Number(req.params.id);
+    if (Number.isNaN(gameID)) return res.status(400).json({ success:false, message:'Invalid game id' });
+
+    // Accept both table  names and friendly aliases
+    const body = req.body || {};
+    const name = body.name ?? null;
+    const releaseDate = normalizeDate(body.releaseDate ?? null);
+
+    // rating may come as ratingID or esrbRating/ratingName
+    const ratingID = body.ratingID ?? null;
+    const ratingName = body.ratingName ?? body.esrbRating ?? null;
+
+    // publisher may come as publisherID or publisher/publisherName
+    const publisherID = body.publisherID ?? null;
+    const publisherName = body.publisherName ?? body.publisher ?? null;
+
+    // Ensure row exists
+    const [[row]] = await db.query('SELECT gameID FROM Games WHERE gameID=?', [gameID]);
+    if (!row) return res.status(404).json({ success:false, message:'Game not found' });
+
+    // Call the SP (any NULLs mean "keep current value")
+    await db.query('CALL sp_update_game(?, ?, ?, ?, ?, ?, ?)', [
+      gameID, name, releaseDate, ratingID, ratingName, publisherID, publisherName
+    ]);
+
+    res.json({ success:true });
+  } catch (e) {
+    console.error('Update game failed:', e);
+    res.status(500).json({ success:false, error: e.sqlMessage || e.message || 'Failed' });
   }
 });
 
