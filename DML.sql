@@ -42,13 +42,14 @@ INSERT INTO Games (name, ratingID, releaseDate, publisherID) VALUES
   (SELECT publisherID FROM Publishers WHERE name = 'FromSoftware')
 );
 
-INSERT INTO GenreItems (gameID, name) VALUES
-((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), 'Horror'),
-((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), 'Sci-Fi'),
-((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), 'Shooter'),
-((SELECT gameID FROM Games WHERE name = 'Fortnite'), 'Shooter'),
-((SELECT gameID FROM Games WHERE name = 'Fortnite'), 'RPG'),
-((SELECT gameID FROM Games WHERE name = 'Elden Ring'), 'RPG');
+INSERT INTO GenreItems (gameID, genreID) VALUES
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Horror')),
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Sci-Fi')),
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Shooter')),
+((SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT genreID FROM Genres WHERE name = 'Shooter')),
+((SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT genreID FROM Genres WHERE name = 'RPG')),
+((SELECT gameID FROM Games WHERE name = 'Elden Ring'), (SELECT genreID FROM Genres WHERE name = 'RPG'));
+
 
 INSERT INTO GamePlatforms (gameID, platformID, price) VALUES
 ((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT platformID FROM Platforms WHERE name = 'PC'), 29.99),

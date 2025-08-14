@@ -102,8 +102,7 @@ CREATE TABLE PurchaseItems (
 CREATE TABLE Genres (
     genreID INT NOT NULL AUTO_INCREMENT,
     name VARCHAR(50) NOT NULL,
-    PRIMARY KEY (genreID),
-    UNIQUE KEY uq_genres_name (name)
+    PRIMARY KEY (genreID)
 );
 
 CREATE TABLE GenreItems (
