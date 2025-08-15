@@ -25,5 +25,5 @@ Step 1:
 Step 2:
 > cd frontend && npm run production
 
-
-
+*Some boilerplate code has been adapted from the class modules.*
+*AI Used: Copilot was used sparingly for repetative tasks and feedback*
