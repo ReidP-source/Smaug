@@ -1,52 +1,163 @@
-/*
-  Queries
-*/
+SET FOREIGN_KEY_CHECKS=0;
+SET AUTOCOMMIT = 0;
 
--- Select Games, ratings, and publisher for games based on IDs
-SELECT 
-    Games.name, 
-    Ratings.name AS "ESRB Rating",
-    DATE_FORMAT(Games.releaseDate, '%m/%d/%y') AS releaseDate,
-    Publishers.name AS "Publisher"
-FROM Games
-INNER JOIN Ratings ON Ratings.ratingID = Games.ratingID
-INNER JOIN Publishers ON Publishers.publisherID = Games.publisherID;
+INSERT INTO Ratings (name, minimumAge) VALUES
+('Mature 17+', 17),
+('Teen', 13),
+('Everyone', 0);
 
--- Select Customers ID, name, email, **LibraryID, CartID** TO DO
-SELECT Customers.customerID, Customers.name, Customers.email FROM Customers;
+INSERT INTO Publishers (name) VALUES
+('SEGA'),
+('Epic Games'),
+('FromSoftware');
 
--- Viewing a customers library of games.
-SELECT Games.*
-FROM LibraryItems
-JOIN Libraries ON LibraryItems.libraryID = Libraries.libraryID
-JOIN Games ON LibraryItems.gameID = Games.gameID
-WHERE Libraries.customerID = @customerID
+INSERT INTO Platforms (name) VALUES
+('PC'),
+('PlayStation 5'),
+('Xbox Series X');
 
--- Selecting the list of purchases from all customers.
-SELECT Purchases.purchaseID,  
-        Platforms.name AS platform, 
-        Games.name AS game, 
-        PurchaseItems.totalPaid, 
-        Purchases.purchaseDate
-FROM PurchaseItems
-JOIN Purchases ON PurchaseItems.purchaseID = Purchases.purchaseID
-JOIN Games ON PurchaseItems.gameID = Games.gameID
-JOIN Platforms ON PurchaseItems.platformID = Platforms.platformID;
+INSERT INTO Genres (name) VALUES
+('Horror'),
+('Sci-Fi'),
+('Shooter'),
+('RPG');
+
+INSERT INTO Games (name, ratingID, releaseDate, publisherID) VALUES
+(
+  'Alien: Isolation',
+  (SELECT ratingID FROM Ratings WHERE name = 'Mature 17+'),
+  '2014-10-07',
+  (SELECT publisherID FROM Publishers WHERE name = 'SEGA')
+),
+(
+  'Fortnite',
+  (SELECT ratingID FROM Ratings WHERE name = 'Teen'),
+  '2017-07-25',
+  (SELECT publisherID FROM Publishers WHERE name = 'Epic Games')
+),
+(
+  'Elden Ring',
+  (SELECT ratingID FROM Ratings WHERE name = 'Mature 17+'),
+  '2022-02-25',
+  (SELECT publisherID FROM Publishers WHERE name = 'FromSoftware')
+);
+
+INSERT INTO GenreItems (gameID, genreID) VALUES
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Horror')),
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Sci-Fi')),
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Shooter')),
+((SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT genreID FROM Genres WHERE name = 'Shooter')),
+((SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT genreID FROM Genres WHERE name = 'RPG')),
+((SELECT gameID FROM Games WHERE name = 'Elden Ring'), (SELECT genreID FROM Genres WHERE name = 'RPG'));
 
 
-/*
-  Stored Procedures
-*/
+INSERT INTO GamePlatforms (gameID, platformID, price) VALUES
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT platformID FROM Platforms WHERE name = 'PC'), 29.99),
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT platformID FROM Platforms WHERE name = 'PlayStation 5'), 34.99),
+((SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT platformID FROM Platforms WHERE name = 'PC'), 0.00),
+((SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT platformID FROM Platforms WHERE name = 'Xbox Series X'), 0.00),
+((SELECT gameID FROM Games WHERE name = 'Elden Ring'), (SELECT platformID FROM Platforms WHERE name = 'PC'), 59.99),
+((SELECT gameID FROM Games WHERE name = 'Elden Ring'), (SELECT platformID FROM Platforms WHERE name = 'PlayStation 5'), 69.99);
 
-----------------------
--- Create Customer TBC
-----------------------
+INSERT INTO Customers (name, email, phoneNumber) VALUES
+('Amanda Ripley', 'amanda.ripley@example.com', '5551234567'),
+('John Doe', 'john.doe@example.com', '5559876543'),
+('Sarah Connor', 'sarah.connor@example.com', '5551112222'),
+('Master Chief', 'chief@unsc.mil', '5553334444'),
+('Lara Croft', 'lara.croft@example.com', '5555556666');
 
-DELIMITER //
+INSERT INTO Libraries (customerID) VALUES
+((SELECT customerID FROM Customers WHERE email = 'amanda.ripley@example.com')),
+((SELECT customerID FROM Customers WHERE email = 'john.doe@example.com')),
+((SELECT customerID FROM Customers WHERE email = 'sarah.connor@example.com')),
+((SELECT customerID FROM Customers WHERE email = 'chief@unsc.mil')),
+((SELECT customerID FROM Customers WHERE email = 'lara.croft@example.com'));
 
-CREATE PROCEDURE sm_CreateCustomer (
-  IN c_firstname
-)
+INSERT INTO LibraryItems (libraryID, gameID) VALUES
+(
+  (SELECT libraryID FROM Libraries WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'amanda.ripley@example.com')),
+  (SELECT gameID FROM Games WHERE name = 'Alien: Isolation')
+),
+(
+  (SELECT libraryID FROM Libraries WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'john.doe@example.com')),
+  (SELECT gameID FROM Games WHERE name = 'Fortnite')
+),
+(
+  (SELECT libraryID FROM Libraries WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'john.doe@example.com')),
+  (SELECT gameID FROM Games WHERE name = 'Elden Ring')
+),
+(
+  (SELECT libraryID FROM Libraries WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'chief@unsc.mil')),
+  (SELECT gameID FROM Games WHERE name = 'Alien: Isolation')
+);
 
-DELIMITER ;
+INSERT INTO Carts (customerID) VALUES
+((SELECT customerID FROM Customers WHERE email = 'amanda.ripley@example.com')),
+((SELECT customerID FROM Customers WHERE email = 'john.doe@example.com')),
+((SELECT customerID FROM Customers WHERE email = 'sarah.connor@example.com')),
+((SELECT customerID FROM Customers WHERE email = 'chief@unsc.mil')),
+((SELECT customerID FROM Customers WHERE email = 'lara.croft@example.com'));
 
+INSERT INTO CartItems (cartID, gameID, platformID) VALUES
+(
+  (SELECT cartID FROM Carts WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'amanda.ripley@example.com')),
+  (SELECT gameID FROM Games WHERE name = 'Alien: Isolation'),
+  (SELECT platformID FROM Platforms WHERE name = 'PC')
+),
+(
+  (SELECT cartID FROM Carts WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'john.doe@example.com')),
+  (SELECT gameID FROM Games WHERE name = 'Elden Ring'),
+  (SELECT platformID FROM Platforms WHERE name = 'PlayStation 5')
+),
+(
+  (SELECT cartID FROM Carts WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'sarah.connor@example.com')),
+  (SELECT gameID FROM Games WHERE name = 'Elden Ring'),
+  (SELECT platformID FROM Platforms WHERE name = 'PC')
+),
+(
+  (SELECT cartID FROM Carts WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'sarah.connor@example.com')),
+  (SELECT gameID FROM Games WHERE name = 'Fortnite'),
+  (SELECT platformID FROM Platforms WHERE name = 'PC')
+),
+(
+  (SELECT cartID FROM Carts WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'chief@unsc.mil')),
+  (SELECT gameID FROM Games WHERE name = 'Alien: Isolation'),
+  (SELECT platformID FROM Platforms WHERE name = 'PlayStation 5')
+),
+(
+  (SELECT cartID FROM Carts WHERE customerID = (SELECT customerID FROM Customers WHERE email = 'lara.croft@example.com')),
+  (SELECT gameID FROM Games WHERE name = 'Elden Ring'),
+  (SELECT platformID FROM Platforms WHERE name = 'PlayStation 5')
+);
+
+INSERT INTO Purchases (customerID, purchaseDate, paid) VALUES
+(
+  (SELECT customerID FROM Customers WHERE email = 'amanda.ripley@example.com'),
+  '2024-12-30 14:30:00',
+  TRUE
+),
+(
+  (SELECT customerID FROM Customers WHERE email = 'john.doe@example.com'),
+  '2025-01-05 09:15:00',
+  TRUE
+),
+(
+  (SELECT customerID FROM Customers WHERE email = 'sarah.connor@example.com'),
+  '2025-01-06 16:45:00',
+  FALSE
+),
+(
+  (SELECT customerID FROM Customers WHERE email = 'chief@unsc.mil'),
+  '2024-12-15 11:20:00',
+  TRUE
+);
+
+INSERT INTO PurchaseItems (purchaseID, gameID, platformID, totalPaid) VALUES
+(1, (SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT platformID FROM Platforms WHERE name = 'PC'), 29.99),
+(2, (SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT platformID FROM Platforms WHERE name = 'PC'), 0.00),
+(2, (SELECT gameID FROM Games WHERE name = 'Elden Ring'), (SELECT platformID FROM Platforms WHERE name = 'PlayStation 5'), 69.99),
+(3, (SELECT gameID FROM Games WHERE name = 'Elden Ring'), (SELECT platformID FROM Platforms WHERE name = 'PC'), 59.99),
+(4, (SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT platformID FROM Platforms WHERE name = 'PlayStation 5'), 34.99);
+
+SET FOREIGN_KEY_CHECKS=1;
+COMMIT;

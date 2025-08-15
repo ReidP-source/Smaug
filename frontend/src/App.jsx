@@ -10,13 +10,14 @@ import DBLibrary from './pages/Library'
 import DBGenres from './pages/Genres'
 import DBPurchases from './pages/Purchases'
 import DBPlatforms from './pages/Platforms'
-//import DBRating from './pages/Ratings'
+import DBRatings from './pages/Ratings'
+import DBPublishers from './pages/Publishers'
 
 // Components
 import Navigation from './components/Navigation';
 
 // Define the backend port and URL for API requests
-const backendPort = 9660;  // Use the port you assigned to the backend server, this would normally go in a .env file
+const backendPort = 9670;  // Use the port you assigned to the backend server, this would normally go in a .env file
 const backendURL = `http://classwork.engr.oregonstate.edu:${backendPort}`;
 
 function App() {
@@ -33,7 +34,8 @@ function App() {
                 <Route path="/Purchases" element={<DBPurchases backendURL={backendURL} />} />
                 <Route path="/Platforms" element={<DBPlatforms backendURL={backendURL} />} />
                 <Route path="/Genres" element={<DBGenres backendURL={backendURL} />} />
-                
+                <Route path="/Ratings" element={<DBRatings  backendURL={backendURL} />} />
+                <Route path="/Publishers" element={<DBPublishers backendURL={backendURL} />} />
             </Routes>
         </>
     );

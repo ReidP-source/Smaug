@@ -288,10 +288,11 @@ BEGIN
 END //
 DELIMITER ;
 
+---------------------
+-- DELETE
+---------------------
 
 /* DELETE GAME via ID */
-
--- Remove a game and all related purchase history for that game
 DROP PROCEDURE IF EXISTS sp_delete_game;
 DELIMITER //
 
@@ -337,4 +338,210 @@ BEGIN
   END IF;
   CALL sp_delete_game(v_id);
 END //
+DELIMITER ;
+
+
+/* Delete Customer via ID */
+DROP PROCEDURE IF EXISTS sp_delete_customer;
+DELIMITER //
+
+CREATE PROCEDURE sp_delete_customer(IN c_id INT)
+BEGIN
+  DECLARE v_exists INT;
+
+  SELECT COUNT(*) INTO v_exists FROM Customers WHERE customerID = c_id;
+  IF v_exists = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Customer not found';
+  END IF;
+
+  START TRANSACTION;
+
+    -- Deleting customer (Cascade handles: Library -> LibraryItem, Cart -> CartItems) .
+    -- Will not remove customer purchases and instead set to cid from purchase to null.
+    DELETE FROM Customers WHERE customerID = c_id;
+
+  COMMIT;
+END //
+DELIMITER ;
+
+
+---------------------
+-- Create
+---------------------
+
+/* CREATE GAME (supports rating/publisher by ID or name; auto-creates publisher if missing) */
+DROP PROCEDURE IF EXISTS sp_create_game;
+DELIMITER //
+
+CREATE PROCEDURE sp_create_game(
+  IN p_name           VARCHAR(255),
+  IN p_releaseDate    DATE,
+  IN p_ratingID       INT,
+  IN p_ratingName     VARCHAR(50),
+  IN p_publisherID    INT,
+  IN p_publisherName  VARCHAR(255)
+)
+BEGIN
+  DECLARE v_ratingID INT;
+  DECLARE v_publisherID INT;
+
+  IF p_name IS NULL OR TRIM(p_name) = '' THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Game name is required';
+  END IF;
+
+  IF p_releaseDate IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'releaseDate is required';
+  END IF;
+
+  START TRANSACTION;
+
+    -- Resolve rating
+    SET v_ratingID = NULL;
+    IF p_ratingID IS NOT NULL THEN
+      SELECT ratingID INTO v_ratingID FROM Ratings WHERE ratingID = p_ratingID;
+    ELSEIF p_ratingName IS NOT NULL AND TRIM(p_ratingName) <> '' THEN
+      SELECT ratingID INTO v_ratingID FROM Ratings WHERE name = p_ratingName;
+    END IF;
+
+    IF v_ratingID IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid or missing rating (by id or name)';
+    END IF;
+
+    -- Resolve or create publisher
+    SET v_publisherID = NULL;
+    IF p_publisherID IS NOT NULL THEN
+      SELECT publisherID INTO v_publisherID FROM Publishers WHERE publisherID = p_publisherID;
+      IF v_publisherID IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'publisherID not found';
+      END IF;
+    ELSE
+      IF p_publisherName IS NULL OR TRIM(p_publisherName) = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Publisher id or name is required';
+      END IF;
+
+      SELECT publisherID INTO v_publisherID FROM Publishers WHERE name = p_publisherName;
+      IF v_publisherID IS NULL THEN
+        INSERT INTO Publishers(name) VALUES (p_publisherName);
+        SET v_publisherID = LAST_INSERT_ID();
+      END IF;
+    END IF;
+
+    -- Optional duplicate protection (by name + publisher)
+    IF EXISTS (SELECT 1 FROM Games WHERE name = p_name AND publisherID = v_publisherID) THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Game already exists for this publisher';
+    END IF;
+
+    INSERT INTO Games (name, ratingID, releaseDate, publisherID)
+    VALUES (p_name, v_ratingID, p_releaseDate, v_publisherID);
+
+  COMMIT;
+
+  SELECT LAST_INSERT_ID() AS gameID;
+  -- Return summary
+  SELECT 'OK' AS status;
+
+END //
+DELIMITER ;
+
+---------------------
+-- Update
+---------------------
+
+/* UPDATE GAME (partial update; resolves rating/publisher by id or name; creates publisher if name missing) */
+DROP PROCEDURE IF EXISTS sp_update_game;
+DELIMITER //
+
+CREATE PROCEDURE sp_update_game(
+  IN p_gameID         INT,
+  IN p_name           VARCHAR(255),
+  IN p_releaseDate    DATE,
+  IN p_ratingID       INT,
+  IN p_ratingName     VARCHAR(50),
+  IN p_publisherID    INT,
+  IN p_publisherName  VARCHAR(255)
+)
+BEGIN
+  DECLARE v_exists INT;
+  DECLARE v_name VARCHAR(255);
+  DECLARE v_release DATE;
+  DECLARE v_ratingID INT;
+  DECLARE v_publisherID INT;
+
+  SELECT COUNT(*) INTO v_exists FROM Games WHERE gameID = p_gameID;
+  IF v_exists = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Game not found';
+  END IF;
+
+  -- Start with current values
+  SELECT name, releaseDate, ratingID, publisherID
+    INTO v_name, v_release, v_ratingID, v_publisherID
+  FROM Games WHERE gameID = p_gameID;
+
+  -- Override if provided
+  IF p_name IS NOT NULL AND TRIM(p_name) <> '' THEN SET v_name = p_name; END IF;
+  IF p_releaseDate IS NOT NULL THEN SET v_release = p_releaseDate; END IF;
+
+  -- Resolve rating
+  IF p_ratingID IS NOT NULL THEN
+    SELECT ratingID INTO v_ratingID FROM Ratings WHERE ratingID = p_ratingID;
+    IF v_ratingID IS NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='ratingID not found'; END IF;
+  ELSEIF p_ratingName IS NOT NULL AND TRIM(p_ratingName) <> '' THEN
+    SELECT ratingID INTO v_ratingID FROM Ratings WHERE name = p_ratingName;
+    IF v_ratingID IS NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='ratingName not found'; END IF;
+  END IF;
+
+  -- Resolve or create publisher
+  IF p_publisherID IS NOT NULL THEN
+    SELECT publisherID INTO v_publisherID FROM Publishers WHERE publisherID = p_publisherID;
+    IF v_publisherID IS NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='publisherID not found'; END IF;
+  ELSEIF p_publisherName IS NOT NULL AND TRIM(p_publisherName) <> '' THEN
+    SELECT publisherID INTO v_publisherID FROM Publishers WHERE name = p_publisherName;
+    IF v_publisherID IS NULL THEN
+      INSERT INTO Publishers(name) VALUES (p_publisherName);
+      SET v_publisherID = LAST_INSERT_ID();
+    END IF;
+  END IF;
+
+  UPDATE Games
+     SET name = v_name,
+         releaseDate = v_release,
+         ratingID = v_ratingID,
+         publisherID = v_publisherID
+   WHERE gameID = p_gameID;
+
+  SELECT 'OK' AS status;
+END //
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER auto_create_publisher
+BEFORE INSERT ON Games
+FOR EACH ROW
+BEGIN
+    DECLARE pub_id INT DEFAULT NULL;
+    DECLARE publisher_name_to_use VARCHAR(255) DEFAULT NULL;
+    
+    -- Check if we have a publisher name but no publisher ID
+    IF NEW.publisherName IS NOT NULL AND NEW.publisherName != '' AND NEW.publisherID IS NULL THEN
+        SET publisher_name_to_use = TRIM(NEW.publisherName);
+        
+        -- Check if publisher already exists (case-insensitive)
+        SELECT publisherID INTO pub_id 
+        FROM Publishers 
+        WHERE LOWER(name) = LOWER(publisher_name_to_use)
+        LIMIT 1;
+        
+        -- If publisher doesn't exist, create it
+        IF pub_id IS NULL THEN
+            INSERT INTO Publishers (name) VALUES (publisher_name_to_use);
+            SET pub_id = LAST_INSERT_ID();
+        END IF;
+        
+        -- Set the publisher ID and clear the publisher name
+        SET NEW.publisherID = pub_id;
+        SET NEW.publisherName = NULL;
+    END IF;
+END//
+
 DELIMITER ;

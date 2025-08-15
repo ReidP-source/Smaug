@@ -54,26 +54,30 @@ const TableRow = ({
         </td>
       ))}
 
-      {children /* optional extra cells like Library / Cart */}
+      {children }
+
+      {!(table === 'platforms' || table === 'purchases') && (
+        <td>
+          <DeleteForm
+            rowObject={rowObject}
+            backendURL={backendURL}
+            table={table}
+            idField={idField}
+            refreshData={refreshData}
+          />
+        </td>
+      )}
 
       <td>
-        <DeleteForm
-          rowObject={rowObject}
-          backendURL={backendURL}
-          table={table}
-          idField={idField}
-          refreshData={refreshData}
-        />
-      </td>
-
-      <td>
-        {isEditing ? (
-          <>
-            <button type="button" onClick={handleUpdate}>Update</button>
-            <button type="button" onClick={onCancel}>Cancel</button>
-          </>
-        ) : (
-          <button type="button" onClick={onEdit}>Edit</button>
+        {!(table === 'purchases') && (
+          isEditing ? (
+            <>
+              <button type="button" onClick={handleUpdate}>Update</button>
+              <button type="button" onClick={onCancel}>Cancel</button>
+            </>
+          ) : (
+            <button type="button" onClick={onEdit}>Edit</button>
+          )
         )}
       </td>
     </tr>
