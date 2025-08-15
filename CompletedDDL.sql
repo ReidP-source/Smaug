@@ -52,7 +52,7 @@ CREATE TABLE Games (
     publisherID INT NOT NULL,
     PRIMARY KEY (gameID),
     FOREIGN KEY (publisherID) REFERENCES Publishers(publisherID) ON DELETE RESTRICT,
-    FOREIGN KEY (ratingID) REFERENCES Ratings(ratingID) ON DELETE RESTRICT
+    FOREIGN KEY (ratingID) REFERENCES Ratings(ratingID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE GamePlatforms (
@@ -95,7 +95,7 @@ CREATE TABLE PurchaseItems (
       totalPaid DECIMAL(19,2) NOT NULL,
       PRIMARY KEY (purchaseID, gameID, platformID),
       FOREIGN KEY (purchaseID) REFERENCES Purchases(purchaseID) ON DELETE CASCADE,
-      FOREIGN KEY (gameID) REFERENCES Games(gameID) ON DELETE RESTRICT,
+      FOREIGN KEY (gameID) REFERENCES Games(gameID) ON DELETE CASCADE,
       FOREIGN KEY (platformID) REFERENCES Platforms(platformID) ON DELETE RESTRICT
 );
 

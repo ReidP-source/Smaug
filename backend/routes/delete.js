@@ -38,34 +38,38 @@ module.exports = (db) => {
   router.delete('/publishers/:id', async (req, res) => {
     try {
       const publisherID = Number(req.params.id);
-      const [[row]] = await db.query('SELECT publisherID FROM Publishers WHERE publisherID=?', [publisherID]);
-      if (!row) return res.status(404).json({ success: false, message: 'Publisher not found' });
-      
-      await db.query('DELETE FROM Publishers WHERE publisherID=?', [publisherID]);
-      res.json({ success: true, message: 'Publisher removed' });
+      if (Number.isNaN(publisherID)) {
+        return res.status(400).json({ success: false, message: 'Invalid publisher id' });
+      }
+      await db.query('CALL sp_delete_publisher(?)', [publisherID]);
+      res.json({ success: true, message: 'Publisher and related games removed' });
     } catch (e) {
+      if (e && e.errno === 1644) { // SIGNAL from SP
+        return res.status(404).json({ success: false, message: e.sqlMessage || 'Not found' });
+      }
       console.error('Delete publisher error:', e);
-      res.status(500).json({ success: false, error: e.sqlMessage || 'Failed' });
+      res.status(500).json({ success: false, error: e.sqlMessage || e.message || 'Failed' });
     }
   });
 
  
-// Delete Genre 
-router.delete('/genres/:id', async (req, res) => {
-  try {
-    
-    const genreName = req.params.id;
-    
-    const [[row]] = await db.query('SELECT name FROM Genres WHERE name=?', [genreName]);
-    if (!row) return res.status(404).json({ success: false, message: 'Genre not found' });
-    
-    await db.query('DELETE FROM Genres WHERE name=?', [genreName]);
-    res.json({ success: true, message: 'Genre removed' });
-  } catch (e) {
-    console.error('Delete genre error:', e);
-    res.status(500).json({ success: false, error: e.sqlMessage || 'Failed' });
-  }
-});
+  // Delete Genre 
+  router.delete('/genres/:id', async (req, res) => {
+    try {
+      const genreID = Number(req.params.id);
+      if (Number.isNaN(genreID)) {
+        return res.status(400).json({ success: false, message: 'Invalid genre id' });
+      }
+      await db.query('CALL sp_delete_genre(?)', [genreID]);
+      res.json({ success: true, message: 'Genre removed (links cleared)' });
+    } catch (e) {
+      if (e && e.errno === 1644) { // SIGNAL from SP
+        return res.status(404).json({ success: false, message: e.sqlMessage || 'Not found' });
+      }
+      console.error('Delete genre error:', e);
+      res.status(500).json({ success: false, error: e.sqlMessage || e.message || 'Failed' });
+    }
+  });
 
   // Delete Platform
   router.delete('/platforms/:id', async (req, res) => {
@@ -86,14 +90,15 @@ router.delete('/genres/:id', async (req, res) => {
   router.delete('/ratings/:id', async (req, res) => {
     try {
       const ratingID = Number(req.params.id);
-      const [[row]] = await db.query('SELECT ratingID FROM Ratings WHERE ratingID=?', [ratingID]);
-      if (!row) return res.status(404).json({ success: false, message: 'Rating not found' });
-      
-      await db.query('DELETE FROM Ratings WHERE ratingID=?', [ratingID]);
-      res.json({ success: true, message: 'Rating removed' });
+      if (Number.isNaN(ratingID)) return res.status(400).json({ success:false, message:'Invalid rating id' });
+      const [[dbInfo]] = await db.query('SELECT DATABASE() db');
+      console.log('DELETE /ratings', { ratingID, db: dbInfo.db });
+      await db.query('CALL sp_delete_rating(?)', [ratingID]);
+      res.json({ success:true, message:'Rating and related games removed' });
     } catch (e) {
+      if (e && e.errno === 1644) return res.status(404).json({ success:false, message: e.sqlMessage || 'Not found' });
       console.error('Delete rating error:', e);
-      res.status(500).json({ success: false, error: e.sqlMessage || 'Failed' });
+      res.status(500).json({ success:false, error: e.sqlMessage || e.message || 'Failed' });
     }
   });
 

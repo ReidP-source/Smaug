@@ -61,7 +61,7 @@ BEGIN
     publisherID INT NOT NULL,
     PRIMARY KEY (gameID),
     FOREIGN KEY (publisherID) REFERENCES Publishers(publisherID) ON DELETE RESTRICT,
-    FOREIGN KEY (ratingID)  REFERENCES Ratings(ratingID)      ON DELETE RESTRICT
+    FOREIGN KEY (ratingID)  REFERENCES Ratings(ratingID)      ON DELETE CASCADE ON UPDATE CASCADE
   );
 
   CREATE TABLE GamePlatforms (
@@ -104,7 +104,7 @@ BEGIN
     totalPaid DECIMAL(19,2) NOT NULL,
     PRIMARY KEY (purchaseID, gameID, platformID),
     FOREIGN KEY (purchaseID) REFERENCES Purchases(purchaseID) ON DELETE CASCADE,
-    FOREIGN KEY (gameID)     REFERENCES Games(gameID)         ON DELETE RESTRICT,
+    FOREIGN KEY (gameID)     REFERENCES Games(gameID)         ON DELETE CASCADE,
     FOREIGN KEY (platformID) REFERENCES Platforms(platformID) ON DELETE RESTRICT
   );
 
@@ -289,7 +289,7 @@ END //
 DELIMITER ;
 
 ---------------------
--- DELETE
+-- Game
 ---------------------
 
 /* DELETE GAME via ID */
@@ -340,36 +340,8 @@ BEGIN
 END //
 DELIMITER ;
 
-
-/* Delete Customer via ID */
-DROP PROCEDURE IF EXISTS sp_delete_customer;
-DELIMITER //
-
-CREATE PROCEDURE sp_delete_customer(IN c_id INT)
-BEGIN
-  DECLARE v_exists INT;
-
-  SELECT COUNT(*) INTO v_exists FROM Customers WHERE customerID = c_id;
-  IF v_exists = 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Customer not found';
-  END IF;
-
-  START TRANSACTION;
-
-    -- Deleting customer (Cascade handles: Library -> LibraryItem, Cart -> CartItems) .
-    -- Will not remove customer purchases and instead set to cid from purchase to null.
-    DELETE FROM Customers WHERE customerID = c_id;
-
-  COMMIT;
-END //
-DELIMITER ;
-
-
----------------------
--- Create
----------------------
-
 /* CREATE GAME (supports rating/publisher by ID or name; auto-creates publisher if missing) */
+
 DROP PROCEDURE IF EXISTS sp_create_game;
 DELIMITER //
 
@@ -443,11 +415,9 @@ BEGIN
 END //
 DELIMITER ;
 
----------------------
--- Update
----------------------
 
 /* UPDATE GAME (partial update; resolves rating/publisher by id or name; creates publisher if name missing) */
+
 DROP PROCEDURE IF EXISTS sp_update_game;
 DELIMITER //
 
@@ -513,35 +483,81 @@ BEGIN
 END //
 DELIMITER ;
 
+--==========================
+-- Customers
+--==========================
+
+/* Delete Customer via ID */
+DROP PROCEDURE IF EXISTS sp_delete_customer;
 DELIMITER //
 
-CREATE TRIGGER auto_create_publisher
-BEFORE INSERT ON Games
-FOR EACH ROW
+CREATE PROCEDURE sp_delete_customer(IN c_id INT)
 BEGIN
-    DECLARE pub_id INT DEFAULT NULL;
-    DECLARE publisher_name_to_use VARCHAR(255) DEFAULT NULL;
-    
-    -- Check if we have a publisher name but no publisher ID
-    IF NEW.publisherName IS NOT NULL AND NEW.publisherName != '' AND NEW.publisherID IS NULL THEN
-        SET publisher_name_to_use = TRIM(NEW.publisherName);
-        
-        -- Check if publisher already exists (case-insensitive)
-        SELECT publisherID INTO pub_id 
-        FROM Publishers 
-        WHERE LOWER(name) = LOWER(publisher_name_to_use)
-        LIMIT 1;
-        
-        -- If publisher doesn't exist, create it
-        IF pub_id IS NULL THEN
-            INSERT INTO Publishers (name) VALUES (publisher_name_to_use);
-            SET pub_id = LAST_INSERT_ID();
-        END IF;
-        
-        -- Set the publisher ID and clear the publisher name
-        SET NEW.publisherID = pub_id;
-        SET NEW.publisherName = NULL;
-    END IF;
-END//
+  DECLARE v_exists INT;
 
+  SELECT COUNT(*) INTO v_exists FROM Customers WHERE customerID = c_id;
+  IF v_exists = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Customer not found';
+  END IF;
+
+  START TRANSACTION;
+
+    -- Deleting customer (Cascade handles: Library -> LibraryItem, Cart -> CartItems) .
+    -- Will not remove customer purchases and instead set to cid from purchase to null.
+    DELETE FROM Customers WHERE customerID = c_id;
+
+  COMMIT;
+END //
+DELIMITER ;
+
+--==========================
+-- Ratings
+--==========================
+
+DROP PROCEDURE IF EXISTS sp_delete_rating;
+DELIMITER //
+CREATE PROCEDURE sp_delete_rating(IN p_ratingID INT)
+BEGIN
+  DECLARE v_exists INT DEFAULT 0;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; RESIGNAL; END;
+
+  SELECT COUNT(*) INTO v_exists FROM Ratings WHERE ratingID = p_ratingID;
+  IF v_exists = 0 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Rating not found'; END IF;
+
+  START TRANSACTION;
+    DELETE FROM Games   WHERE ratingID=p_ratingID;
+    DELETE FROM Ratings WHERE ratingID=p_ratingID;
+  COMMIT;
+
+  SELECT 'OK' AS status;
+END //
+DELIMITER ;
+
+
+--==========================
+-- Publishers
+--==========================
+
+/* Delete a publisher and all its games (then cascades remove children of Games) */
+DROP PROCEDURE IF EXISTS sp_delete_publisher;
+DELIMITER //
+CREATE PROCEDURE sp_delete_publisher(IN p_publisherID INT)
+BEGIN
+  DECLARE v_exists INT DEFAULT 0;
+  DECLARE v_games INT DEFAULT 0;
+
+  SELECT COUNT(*) INTO v_exists FROM Publishers WHERE publisherID = p_publisherID;
+  IF v_exists = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Publisher not found';
+  END IF;
+
+  SELECT COUNT(*) INTO v_games FROM Games WHERE publisherID = p_publisherID;
+
+  START TRANSACTION;
+    DELETE FROM Games WHERE publisherID = p_publisherID;  -- child rows cascade from Games
+    DELETE FROM Publishers WHERE publisherID = p_publisherID;
+  COMMIT;
+
+  SELECT 'OK' AS status, v_games AS gamesDeleted;
+END //
 DELIMITER ;

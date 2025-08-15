@@ -23,31 +23,7 @@ app.use('/', createRoutes(db));
 app.use('/', updateRoutes(db));
 app.use('/', deleteRoutes(db));
 
-const PORT = 9670;
-
-/* HELPER FUNCTIONS */
-
-const normalizeDate = (v) => {
-  if (!v) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
-  const m = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
-  if (m) {
-    let [, mm, dd, yy] = m;
-    if (yy.length === 2) {
-      const n = Number(yy);
-      yy = String(n >= 70 ? 1900 + n : 2000 + n);
-    }
-    return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
-  }
-  const d = new Date(v);
-  if (!Number.isNaN(d.getTime())) {
-    const y = d.getFullYear();
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    const dd = String(d.getDate()).padStart(2,'0');
-    return `${y}-${mm}-${dd}`;
-  }
-  return v;
-};
+const PORT = 9680;
 
 // ########################################
 // ########## ADMIN ROUTES
@@ -63,6 +39,17 @@ app.post('/admin/reset-db', async (req, res) => {
     res.status(500).json({ success: false, error: 'Reset failed' });
   }
 });
+
+app.get('/__db', async (_req, res) => {
+  try {
+    const [[row]] = await db.query('SELECT DATABASE() db, USER() user');
+    res.json(row);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 
 // ########################################
 // ########## LISTENER
