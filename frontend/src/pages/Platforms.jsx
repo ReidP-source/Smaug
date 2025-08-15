@@ -1,73 +1,91 @@
-import { useState, useEffect } from 'react';
-import TableHeader from '../components/TableHeader';
+import { useState, useEffect } from 'react';  // Importing useState for managing state in the component
 import TableRow from '../components/TableRow';
 
 function DBPlatforms({ backendURL }) {
-  const [platforms, setPlatforms] = useState([]);
-  const [editingId, setEditingId] = useState(null);
 
-  const getData = async () => {
-    try {
-      const response = await fetch(`${backendURL}/platforms`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    // Set up state variables to store and display the backend response
+    const [platforms, setPlatforms] = useState([]);
+    const [editingId, setEditingId] = useState(null); // Added for editing functionality
 
-      const data = await response.json();
-      const payloadPlatforms = data.platforms || [];
-      setPlatforms(Array.isArray(payloadPlatforms) ? payloadPlatforms : []);
-    } catch (error) {
-      console.log(`Failure retrieving platform data: ${error}`);
-      setPlatforms([]);
-    }
-  };
+    const getData = async function () {
+        try {
+            // Make a GET request to the backend
+            const response = await fetch(backendURL + '/platforms');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Convert the response into JSON format
+            const data = await response.json();
+            console.log('Received data:', data); // Debug log
+            
+            const {platforms} = data;
+    
+            // Update the platforms state with the response data
+            if (platforms && Array.isArray(platforms)) {
+                console.log('Platforms structure check:', platforms.map(p => Object.keys(p)));
+                setPlatforms(platforms);
+            } else {
+                console.log('Platforms is not an array:', platforms);
+                setPlatforms([]);
+            }
+            
+        } catch (error) {
+          // If the API call fails, print the error to the console
+          console.log(`Failure retrieving platform data: ${error}`);
+          setPlatforms([]); // Set empty array on error
+        }
 
-  useEffect(() => { getData(); }, []);
+    };
 
-  // Hide platformID from display/edit columns, but still use it as idField
-  const displayColumns = platforms.length > 0
-    ? Object.keys(platforms[0]).filter(c => c !== 'platformID')
-    : [];
+    // Load table on page load
+    useEffect(() => {
+        getData();
+    }, []);
 
-  const safeIsEditing = (p) =>
-    editingId !== null && p.platformID != null && editingId === p.platformID;
+    return (
+        <>
+            <h1>Platforms</h1>
+               {(!platforms || platforms.length === 0) ? (
+                <div>No platforms found.</div>
+            ) : (
 
-  return (
-    <>
-      <h1>Platforms</h1>
+            <table>
+                <thead>
+                    <tr>
+                        {platforms.length > 0 && Object.keys(platforms[0]).map((header, index) => (
+                            <th key={index}>{header}</th>
+                        ))}
+                        <th></th>
+                    </tr>
+                </thead>
 
-      {(!platforms || platforms.length === 0) ? (
-        <div>No platforms found.</div>
-      ) : (
-        <table>
-          <TableHeader
-            columns={displayColumns}
-            extraHeaders={['Delete', 'Edit']}
-          />
-          <tbody>
-            {platforms.map((p, idx) => (
-              <TableRow
-                key={p.platformID ?? `row-${idx}`}
-                rowObject={p}
-                backendURL={backendURL}
-                refreshData={getData}
-                columns={displayColumns} 
-                table="platforms"
-                idField="platformID"          
-                isEditing={safeIsEditing(p)}
-                onEdit={() => {
-                  if (p.platformID == null) {
-                    console.warn('Cannot enter edit mode: missing platformID for', p);
-                    return;
-                  }
-                  setEditingId(p.platformID);
-                }}
-                onCancel={() => setEditingId(null)}
-              />
-            ))}
-          </tbody>
-        </table>
-      )}
-    </>
-  );
-}
+                <tbody>
+                    {platforms && platforms.length > 0 && platforms.map((platform, index) => {
+                        console.log('Platform data:', platform); // Debug log
+                        console.log('Platform keys:', Object.keys(platform)); // Debug log
+                        return (
+                            <TableRow 
+                                key={platform.platformID || index} 
+                                rowObject={platform} 
+                                backendURL={backendURL} 
+                                refreshData={getData}
+                                columns={Object.keys(platform)}
+                                table="platforms"
+                                idField="platformID"
+                                isEditing={editingId === platform.platformID}
+                                onEdit={() => setEditingId(platform.platformID)}
+                                onCancel={() => setEditingId(null)}
+                            />
+                        );
+                    })}
+                </tbody>
+            </table>
+            )}
+            {/*<CreateCustomerForm homeworlds={homeworlds} backendURL={backendURL} refreshCustomers={getData} />
+            <UpdateCustomerForm people={people} homeworlds={homeworlds} backendURL={backendURL} refreshCustomers={getData} />*/}              
+          </>
+    );
 
-export default DBPlatforms;
+} export default DBPlatforms;
