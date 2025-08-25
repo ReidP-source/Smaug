@@ -1,3 +1,13 @@
+/* Clean Body */
+body {
+  background: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #2d3748;
+  line-height: 1.6;
+  margin: 0;
+  padding: 20px;
+}
+
 /* Clean Typography */
 h1, h2 {
   margin-left: 16px;
@@ -8,7 +18,7 @@ h1, h2 {
 
 h1 {
   font-size: 2.2rem;
-  border-bottom: 3px solid #764ba2;
+  border-bottom: 3px solid #1b2347;
   padding-bottom: 0.5rem;
   display: inline-block;
 }
@@ -16,6 +26,76 @@ h1 {
 h2 {
   font-size: 1.8rem;
   color: #4a5568;
+}
+
+/* Modern Navigation */
+nav {
+  color: white;
+  background: linear-gradient(135deg, #1b2347 0%, #764ba2 100%);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+nav a {
+  margin-left: 16px;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  vertical-align: middle;
+}
+
+nav a::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+nav a:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+nav a:hover::before {
+  left: 100%;
+}
+
+nav a:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Regular links outside nav */
+a:not(nav a) {
+  margin-left: 16px;
+  color: #764ba2;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+a:not(nav a):hover {
+  color: #5a67d8;
+  text-decoration: underline;
 }
 
 /* Modern Table */
@@ -58,7 +138,7 @@ tr:hover td {
   background-color: #edf2f7;
 }
 
-/* Clean Form */
+/* Form Styles */
 .cuForm {
   margin-left: 32px;
   padding: 24px;
@@ -77,56 +157,148 @@ input, select {
   background: white;
   font-size: 1rem;
   color: #2d3748;
-}
-
-input:focus, select:focus {
-  outline: none;
-  border-color: #764ba2;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  width: 200px;
+  box-sizing: border-box;
 }
 
 input:hover, select:hover {
   border-color: #cbd5e0;
 }
 
-/* Modern Navigation */
-nav {
-  color: #ffffff;
-  background: linear-gradient(135deg, #141b36 0%, #764ba2 100%);
-  padding: 20px;
+/* Create Form */
+.create-form {
+  margin: 0 0 24px 32px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  margin-bottom: 20px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  width: fit-content;
 }
 
-/* Navigation Links */
-nav a {
-  margin-left: 16px;
-  color: white;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 8px 16px;
+.create-form-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  align-items: flex-end;
+}
+
+.create-form .cf-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  max-width: 220px;
+  flex: 0 0 auto;
+}
+
+.create-form .cf-field:has(select[name*="rating"]),
+.create-form .cf-field:has(input[name*="publisher"]) {
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+}
+
+.create-form-compact .cf-field {
+  width: auto;
+}
+
+.create-form .cf-field label {
+  font-size: 0.60rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #4a5568;
+  margin: 0 0 4px;
+}
+
+.create-form input,
+.create-form select {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border: 1px solid #d3dae4;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-nav a:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+.create-form input:focus,
+.create-form select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, .18);
 }
 
-/* Regular links outside nav */
-a:not(nav a) {
-  margin-left: 16px;
-  color: #ffffff;
-  text-decoration: none;
-  font-weight: 500;
+.create-form .cf-actions {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 8px;
 }
 
-a:not(nav a):hover {
-  color: #5a67d8;
-  text-decoration: underline;
+.create-form button {
+  height: 34px;
+  padding: 0 25px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #764ba2;
+  border: 1px solid #764ba2;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(118, 75, 162, 0.2);
+}
+
+.create-form button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.create-form button:hover {
+  background: #6b46c1;
+  border-color: #6b46c1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+}
+
+.create-form button:hover::before {
+  left: 100%;
+}
+
+.create-form button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(118, 75, 162, 0.2);
+}
+
+/* Reset Database Button */
+.reset-db-btn {
+  background: #e53e3e;
+  border: 1px solid #e53e3e;
+  color: #fff;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .08);
+  transition: background .15s, transform .15s;
+}
+
+.reset-db-btn:hover {
+  background: #c53030;
+}
+
+.reset-db-btn:active {
+  transform: translateY(1px);
 }
 
 /* Description Section */
@@ -135,113 +307,9 @@ a:not(nav a):hover {
   padding: 20px;
   background: #f7fafc;
   border-radius: 8px;
-  border-left: 4px solid #764ba2;
+  border-left: 4px solid #1b2347;
   color: #2d3748;
   font-size: 1.1rem;
-  line-height: 1.6;
-}
-
-/* Clean Body */
-body {
-  background: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #2d3748;
-  line-height: 1.6;
-  margin: 0;
-  padding: 20px;
-}
-
-.create-form {
-  margin: 0 0 24px 32px;
-  background:#fff;
-  border:1px solid #e2e8f0;
-  border-radius:8px;
-  padding:14px 18px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.06);
-  width: fit-content;              
-}
-
-.create-form-flex {
-  display:flex;
-  flex-wrap:wrap;
-  gap:14px 22px;               
-  align-items:flex-end;
-}
-
-.create-form .cf-field {
-  display:flex;
-  flex-direction:column;
-  min-width:180px;
-  max-width:220px;
-  flex:0 0 auto;           
-}
-
-.create-form-compact .cf-field { width:auto; } /* override old width */
-
-.create-form .cf-field label {
-  font-size:0.60rem;
-  font-weight:600;
-  letter-spacing:.05em;
-  text-transform:uppercase;
-  color:#4a5568;
-  margin:0 0 4px;
-}
-
-.create-form input {
-  padding:6px 10px;
-  font-size:0.85rem;
-  border:1px solid #d3dae4;
-  border-radius:6px;
-  background:#fff;
-}
-
-.create-form input:focus {
-  outline:none;
-  border-color:#764ba2;
-  box-shadow:0 0 0 2px rgba(102,126,234,.18);
-}
-
-.create-form .cf-actions {
-  display:flex;
-  align-items:flex-end;
-  padding-bottom:8px;
-}
-
-.create-form button {
-  height:34px;
-  padding:0 25px;
-  font-size:0.8rem;
-  font-weight:600;
-  background:#764ba2;
-  border:1px solid #764ba2;
-  color:#fff;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.create-form button:hover {
-  background:#5a67d8;
-  border-color:#5a67d8;
-}
-
-
-.reset-db-btn {
-  background:#e53e3e;
-  border:1px solid #e53e3e;
-  color:#fff;
-  padding:8px 18px;
-  font-size:0.85rem;
-  font-weight:600;
-  border-radius:6px;
-  cursor:pointer;
-  box-shadow:0 2px 4px rgba(0,0,0,.08);
-  transition:background .15s, transform .15s;
-}
-
-.reset-db-btn:hover { background:#c53030; }
-.reset-db-btn:active { transform:translateY(1px); }
-
-.homepageDescription {
-  max-width:880px;
-  line-height:1.45;
+  line-height: 1.45;
+  max-width: 880px;
 }

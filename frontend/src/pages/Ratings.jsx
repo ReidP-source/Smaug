@@ -3,16 +3,15 @@ import TableHeader from '../components/TableHeader';
 import TableRow from '../components/TableRow';
 import CreateForm from '../components/CreateForm';
 
-function Games({ backendURL }) {
-  const [games, setGames] = useState([]);
+function Ratings({ backendURL }) {
+  const [ratings, setRatings] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
   const getData = async () => {
     try {
-      const res = await fetch(backendURL + '/games');
-      const { games } = await res.json();
-      setGames(games);
-  
+      const res = await fetch(backendURL + '/ratings');
+      const { ratings } = await res.json();
+      setRatings(ratings);
     } catch (e) {
       console.log(e);
     }
@@ -20,38 +19,38 @@ function Games({ backendURL }) {
 
   useEffect(() => { getData(); }, []);
 
-  const displayColumns = games.length > 0
-    ? Object.keys(games[0]).filter(c => c !== 'gameID') 
+  const displayColumns = ratings.length > 0
+    ? Object.keys(ratings[0]).filter(c => c !== 'ratingID')
     : [];
 
-  const safeIsEditing = (g) =>
-    editingId !== null && g.gameID != null && editingId === g.gameID;
+  const safeIsEditing = (r) =>
+    editingId !== null && r.ratingID != null && editingId === r.ratingID;
 
   return (
     <>
-      <h1>Games</h1>
+      <h1>Ratings</h1>
       <table>
         <TableHeader
           columns={displayColumns}
           extraHeaders={['Delete', 'Edit']}
         />
         <tbody>
-          {games.map((g, idx) => (
+          {ratings.map((r, idx) => (
             <TableRow
-              key={g.gameID ?? `row-${idx}`} 
-              rowObject={g}
+              key={r.ratingID ?? `row-${idx}`} 
+              rowObject={r}
               backendURL={backendURL}
               refreshData={getData}
               columns={displayColumns}
-              table="games"
-              idField="gameID"
-              isEditing={safeIsEditing(g)}
+              table="ratings"
+              idField="ratingID"
+              isEditing={safeIsEditing(r)}
               onEdit={() => {
-                if (g.gameID == null) {
-                  console.warn('Cannot enter edit mode: missing gameID for', g);
+                if (r.ratingID == null) {
+                  console.warn('Cannot enter edit mode: missing ratingID for', r);
                   return;
                 }
-                setEditingId(g.gameID);
+                setEditingId(r.ratingID);
               }}
               onCancel={() => setEditingId(null)}
             />
@@ -59,15 +58,16 @@ function Games({ backendURL }) {
         </tbody>
       </table>
 
-      <h2>Create Game</h2>
+      <h2>Create Rating</h2>
       <CreateForm
-        columns={['name','release Date','rating ID','publisher ID']}
+        columns={['name']}
         backendURL={backendURL}
-        table="games"
+        table="ratings"
         refreshData={getData}
         layout="row"
       />
     </>
   );
 }
-export default Games;
+
+export default Ratings;

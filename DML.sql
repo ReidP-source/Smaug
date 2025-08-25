@@ -1,52 +1,83 @@
-/*
-  Queries
-*/
+-- ========================================
+-- READ ROUTES 
+-- ========================================
 
--- Select Games, ratings, and publisher for games based on IDs
+-- /ratings
+SELECT ratingID, name FROM Ratings;
+
+-- /publishers
+SELECT publisherID, name FROM Publishers;
+
+-- /games 
+SELECT
+  G.gameID AS gameID,
+  G.name   AS name,
+  R.name   AS esrbRating,
+  DATE_FORMAT(G.releaseDate, '%m/%d/%y') AS releaseDate,
+  P.name   AS publisher
+FROM Games G
+JOIN Ratings    R ON R.ratingID = G.ratingID
+JOIN Publishers P ON P.publisherID = G.publisherID;
+
+SELECT * FROM Platforms;
+
+-- /customers
+SELECT Customers.customerID, Customers.name, Customers.email
+FROM Customers;
+
+-- /customers/:customerID/cart
+SET @customerID := 1;  -- change for testing
+
+SELECT Customers.name
+FROM Customers
+WHERE Customers.customerID = @customerID;
+
+SELECT
+  CartItems.gameID,
+  Platforms.platformID,
+  Games.name      AS "Game Name",
+  Games.releaseDate AS "Release Date",
+  Platforms.name  AS "Platform Name"
+FROM Carts
+JOIN CartItems ON Carts.cartID = CartItems.cartID
+JOIN Games     ON CartItems.gameID = Games.gameID
+JOIN Platforms ON CartItems.platformID = Platforms.platformID
+WHERE Carts.customerID = @customerID;
+
+-- /customers/:customerID/library
+SET @customerID := 1;  -- change for testing
+
 SELECT 
-    Games.name, 
-    Ratings.name AS "ESRB Rating",
-    DATE_FORMAT(Games.releaseDate, '%m/%d/%y') AS releaseDate,
-    Publishers.name AS "Publisher"
-FROM Games
-INNER JOIN Ratings ON Ratings.ratingID = Games.ratingID
-INNER JOIN Publishers ON Publishers.publisherID = Games.publisherID;
+  Customers.name AS customerName,
+  LibraryItems.libraryID,
+  Games.gameID,
+  Games.name AS gameName,
+  Games.releaseDate,
+  Publishers.name AS publisher,
+  Ratings.name AS rating
+FROM Customers
+JOIN Libraries     ON Customers.customerID = Libraries.customerID
+LEFT JOIN LibraryItems ON Libraries.libraryID = LibraryItems.libraryID
+LEFT JOIN Games        ON LibraryItems.gameID = Games.gameID
+LEFT JOIN Publishers   ON Games.publisherID = Publishers.publisherID
+LEFT JOIN Ratings      ON Games.ratingID = Ratings.ratingID
+WHERE Customers.customerID = @customerID
+ORDER BY Games.name;
 
--- Select Customers ID, name, email, **LibraryID, CartID** TO DO
-SELECT Customers.customerID, Customers.name, Customers.email FROM Customers;
+-- /genres
+SELECT name FROM Genres;
 
--- Viewing a customers library of games.
-SELECT Games.*
-FROM LibraryItems
-JOIN Libraries ON LibraryItems.libraryID = Libraries.libraryID
-JOIN Games ON LibraryItems.gameID = Games.gameID
-WHERE Libraries.customerID = @customerID
-
--- Selecting the list of purchases from all customers.
+-- /purchases
 SELECT Purchases.purchaseID,  
-        Platforms.name AS platform, 
-        Games.name AS game, 
-        PurchaseItems.totalPaid, 
-        Purchases.purchaseDate
+       Platforms.name AS platform, 
+       Games.name     AS game, 
+       PurchaseItems.totalPaid, 
+       Purchases.purchaseDate
 FROM PurchaseItems
 JOIN Purchases ON PurchaseItems.purchaseID = Purchases.purchaseID
-JOIN Games ON PurchaseItems.gameID = Games.gameID
+JOIN Games     ON PurchaseItems.gameID     = Games.gameID
 JOIN Platforms ON PurchaseItems.platformID = Platforms.platformID;
 
-
-/*
-  Stored Procedures
-*/
-
-----------------------
--- Create Customer TBC
-----------------------
-
-DELIMITER //
-
-CREATE PROCEDURE sm_CreateCustomer (
-  IN c_firstname
-)
-
-DELIMITER ;
-
+-- /platforms
+SELECT Platforms.name, Platforms.platformID
+FROM Platforms;

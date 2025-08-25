@@ -29,7 +29,7 @@ function DBPurchases({ backendURL }) {
                 <table>
                     <TableHeader
                         columns={purchases.length > 0 ? Object.keys(purchases[0]) : []}
-                        extraHeaders={['Delete', 'Edit']}
+                        extraHeaders={[]}
                     />
                     <tbody>
                         {purchases.map((purchase) => (

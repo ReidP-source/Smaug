@@ -16,6 +16,12 @@ DROP TABLE IF EXISTS Publishers;
 DROP TABLE IF EXISTS Platforms;
 DROP TABLE IF EXISTS Customers;
 
+--============================
+
+-- Schema Definitions
+
+--============================
+
 CREATE TABLE Customers (
     customerID INT AUTO_INCREMENT NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -52,7 +58,7 @@ CREATE TABLE Games (
     publisherID INT NOT NULL,
     PRIMARY KEY (gameID),
     FOREIGN KEY (publisherID) REFERENCES Publishers(publisherID) ON DELETE RESTRICT,
-    FOREIGN KEY (ratingID) REFERENCES Ratings(ratingID) ON DELETE RESTRICT
+    FOREIGN KEY (ratingID) REFERENCES Ratings(ratingID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE GamePlatforms (
@@ -95,21 +101,22 @@ CREATE TABLE PurchaseItems (
       totalPaid DECIMAL(19,2) NOT NULL,
       PRIMARY KEY (purchaseID, gameID, platformID),
       FOREIGN KEY (purchaseID) REFERENCES Purchases(purchaseID) ON DELETE CASCADE,
-      FOREIGN KEY (gameID) REFERENCES Games(gameID) ON DELETE RESTRICT,
+      FOREIGN KEY (gameID) REFERENCES Games(gameID) ON DELETE CASCADE,
       FOREIGN KEY (platformID) REFERENCES Platforms(platformID) ON DELETE RESTRICT
 );
 
 CREATE TABLE Genres (
+    genreID INT NOT NULL AUTO_INCREMENT,
     name VARCHAR(50) NOT NULL,
-    PRIMARY KEY (name)
+    PRIMARY KEY (genreID)
 );
 
 CREATE TABLE GenreItems (
     gameID INT NOT NULL,
-    name VARCHAR(50) NOT NULL,
-    PRIMARY KEY (gameID, name),
-    FOREIGN KEY (gameID) REFERENCES Games(gameID) ON DELETE CASCADE,
-    FOREIGN KEY (name) REFERENCES Genres(name) ON DELETE CASCADE
+    genreID INT NOT NULL,
+    PRIMARY KEY (gameID, genreID),
+    FOREIGN KEY (gameID)  REFERENCES Games(gameID)   ON DELETE CASCADE,
+    FOREIGN KEY (genreID) REFERENCES Genres(genreID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Carts (
@@ -129,6 +136,14 @@ CREATE TABLE CartItems (
     FOREIGN KEY (gameID) REFERENCES Games(gameID) ON DELETE CASCADE,
     FOREIGN KEY (platformID) REFERENCES Platforms(platformID) ON DELETE CASCADE
 );
+
+
+--============================
+
+-- Sample Data
+
+--============================
+
 
 INSERT INTO Ratings (name, minimumAge) VALUES
 ('Mature 17+', 17),
@@ -171,13 +186,14 @@ INSERT INTO Games (name, ratingID, releaseDate, publisherID) VALUES
   (SELECT publisherID FROM Publishers WHERE name = 'FromSoftware')
 );
 
-INSERT INTO GenreItems (gameID, name) VALUES
-((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), 'Horror'),
-((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), 'Sci-Fi'),
-((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), 'Shooter'),
-((SELECT gameID FROM Games WHERE name = 'Fortnite'), 'Shooter'),
-((SELECT gameID FROM Games WHERE name = 'Fortnite'), 'RPG'),
-((SELECT gameID FROM Games WHERE name = 'Elden Ring'), 'RPG');
+INSERT INTO GenreItems (gameID, genreID) VALUES
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Horror')),
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Sci-Fi')),
+((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT genreID FROM Genres WHERE name = 'Shooter')),
+((SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT genreID FROM Genres WHERE name = 'Shooter')),
+((SELECT gameID FROM Games WHERE name = 'Fortnite'), (SELECT genreID FROM Genres WHERE name = 'RPG')),
+((SELECT gameID FROM Games WHERE name = 'Elden Ring'), (SELECT genreID FROM Genres WHERE name = 'RPG'));
+
 
 INSERT INTO GamePlatforms (gameID, platformID, price) VALUES
 ((SELECT gameID FROM Games WHERE name = 'Alien: Isolation'), (SELECT platformID FROM Platforms WHERE name = 'PC'), 29.99),

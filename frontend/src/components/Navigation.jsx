@@ -8,6 +8,8 @@ function Navigation() {
             <a href="/purchases">Purchases</a>
             <a href = "/platforms">Platforms</a>
             <a href="/genres">Genres</a>
+            <a href="/publishers">Publishers</a>
+            <a href="ratings">Ratings</a>
         </nav>
     );
 }
